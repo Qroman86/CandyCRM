@@ -139,5 +139,6 @@ CREATE TABLE larder_items(
   weight decimal(9,3) UNSIGNED COMMENT 'вес в граммах',
   commodity_id INT UNSIGNED COMMENT 'номер товара потребления',
   name VARCHAR(255),
+  expiration_date DATETIME COMMENT 'срок годности',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
