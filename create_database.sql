@@ -11,6 +11,8 @@ CREATE TABLE customers(
 	first_name VARCHAR(64),
 	last_name VARCHAR(128),
 	patronomyc_name VARCHAR(128),
+	mobile_phone VARCHAR(16),
+	email VARCHAR(64),
 	created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 ) COMMENT 'Заказчик';
 
@@ -27,32 +29,6 @@ CREATE TABLE orders (
   REFERENCES customers(id)
   ON DELETE CASCADE
 ) COMMENT 'Заказы';
-
-
--- 4.Тип контакта заказчика
-DROP TABLE IF EXISTS contact_types;
-CREATE TABLE contact_types (
-  id SERIAL PRIMARY KEY,
-  name VARCHAR(128), 
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-) COMMENT 'Тип контакта заказчика';
-
--- 3.Контакт заказчика
-DROP TABLE IF EXISTS contacts;
-CREATE TABLE contacts (
-  id SERIAL PRIMARY KEY,
-  contact_type_id BIGINT UNSIGNED NOT NULL COMMENT 'тип контакта',
-  customer_id BIGINT UNSIGNED NOT NULL,
-  contact_value VARCHAR(128),
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY contact_contact_type_fk (contact_type_id)
-  REFERENCES contact_types(id)
-  ON DELETE CASCADE,
-  FOREIGN KEY contact_customer_fk (customer_id)
-  REFERENCES customers(id)
-  ON DELETE CASCADE
-) COMMENT 'Контактная информация';
-
 
 
 -- 5.Отзыв по заказу
@@ -97,41 +73,42 @@ DROP TABLE IF EXISTS commodities;
 CREATE TABLE commodities(
   id SERIAL PRIMARY KEY,
   name VARCHAR(255),
+  is_weight BOOL DEFAULT TRUE COMMENT 'весовой или количественный товар',
+  is_ingredient BOOL DEFAULT TRUE COMMENT 'является ли товар ингриедиентом для приготовления',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 ) COMMENT 'Товар потребления';
 
--- 6.Позиция заказа (может включать упаковку)
-DROP TABLE IF EXISTS order_items;
-CREATE TABLE order_items (
+-- 6.Позиция заказа (не может включать упаковку)
+DROP TABLE IF EXISTS order_range_items;
+CREATE TABLE order_range_items (
   id SERIAL PRIMARY KEY,
   order_id BIGINT UNSIGNED COMMENT 'номер заказа',
   range_item_id BIGINT UNSIGNED COMMENT 'позиция ассортимента',
   quantity INT UNSIGNED COMMENT 'количество в штуках',
-  commodity_id BIGINT UNSIGNED COMMENT 'позиция товара потребления',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY order_item_order_fk (order_id)
   REFERENCES orders(id)
   ON DELETE CASCADE,
-  FOREIGN KEY order_item_range_item_fk (range_item_id)
+  FOREIGN KEY order_range_item_range_item_fk (range_item_id)
   REFERENCES range_items(id)
-  ON DELETE SET NULL,
-  FOREIGN KEY order_item_commodity_fk (commodity_id)
-  REFERENCES commodities(id)
-  ON DELETE SET NULL
+  ON DELETE SET NULL  
 ) COMMENT 'Позиции заказа';
 
-
-
-
-
-
--- 9.1 Ингридиент
-DROP TABLE IF EXISTS ingredients;
-CREATE TABLE ingredients(
+DROP TABLE IF EXISTS order_non_range_items;
+CREATE TABLE order_non_range_items (
   id SERIAL PRIMARY KEY,
-  name VARCHAR(255),
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-) COMMENT 'Ингридиенты';
+  order_id BIGINT UNSIGNED COMMENT 'номер заказа',
+  commodity_item_id BIGINT UNSIGNED COMMENT 'позиция ассортимента',
+  quantity INT UNSIGNED COMMENT 'количество в штуках',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY order_item_order_fk (order_id)
+  REFERENCES orders(id)
+  ON DELETE CASCADE,
+  FOREIGN KEY order_item_commodities_fk (commodity_item_id)
+  REFERENCES commodities(id)
+  ON DELETE SET NULL  
+) COMMENT 'Позиции заказа';
+
 
 -- 9.Позиция рецепта (количество продукта)
 DROP TABLE IF EXISTS recipe_items;
@@ -141,12 +118,10 @@ CREATE TABLE recipe_items(
   ingredient_id BIGINT UNSIGNED NOT NULL COMMENT 'номер ингридиента',
   weight decimal(9,3) UNSIGNED NOT NULL COMMENT 'вес в граммах',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY recipe_item_commodity_recipe_fk (recipe_id)
-  REFERENCES recipes(id)
-  ON DELETE CASCADE,
-  FOREIGN KEY recipe_item_ingredient_fk (recipe_id)
-  REFERENCES ingredients(id)
-  ON DELETE CASCADE
+  FOREIGN KEY recipe_item_recipe_fk (recipe_id)
+  REFERENCES recipes(id),
+  FOREIGN KEY recipe_item_commodity_fk (ingredient_id)
+  REFERENCES commodities(id)
 ) COMMENT 'Рецепты';
 
 
@@ -166,18 +141,15 @@ DROP TABLE IF EXISTS purchase_items;
 CREATE TABLE purchase_items(
   id SERIAL PRIMARY KEY,
   purchase_id BIGINT UNSIGNED NOT NULL,
-  ingredient_id BIGINT UNSIGNED COMMENT 'номер ингридиента',
   commodity_id BIGINT UNSIGNED COMMENT 'позиция товара потребления',
-  weight decimal(9,3) UNSIGNED COMMENT 'вес в граммах',
+  quantity INT UNSIGNED COMMENT 'количество',
+  weigth_per_item decimal(9,3) UNSIGNED COMMENT 'вес в граммах в одной упаковке',
   cost decimal(9,2) UNSIGNED NOT NULL COMMENT 'стоимость',
   name VARCHAR(255),
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY purchase_item_purchase_fk (purchase_id)
   REFERENCES purchases(id)
   ON DELETE CASCADE,
-  FOREIGN KEY purchase_item_ingredient_fk (ingredient_id)
-  REFERENCES ingredients(id)
-  ON DELETE SET NULL,
   FOREIGN KEY purchase_item_commodity_fk (commodity_id)
   REFERENCES commodities(id)
   ON DELETE SET NULL
@@ -189,15 +161,13 @@ CREATE TABLE purchase_items(
 DROP TABLE IF EXISTS larder_items;
 CREATE TABLE larder_items(
   id SERIAL PRIMARY KEY,
-  ingredient_id BIGINT UNSIGNED COMMENT 'номер ингридиента',  
-  weight decimal(9,3) UNSIGNED COMMENT 'вес в граммах',
+  quantity INT UNSIGNED DEFAULT 1 COMMENT 'количество',
+  weight_per_item decimal(9,3) UNSIGNED COMMENT 'вес в граммах в одной упаковке',  
   commodity_id BIGINT UNSIGNED COMMENT 'номер товара потребления',
+  weight_residue decimal(9,3) UNSIGNED COMMENT 'фактический остаток в граммах в данной упаковке',
   name VARCHAR(255),
   expiration_date DATETIME COMMENT 'срок годности',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY larder_item_ingredient_fk (ingredient_id)
-  REFERENCES ingredients(id)
-  ON DELETE SET NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,  
   FOREIGN KEY larder_item_commodity_fk (commodity_id)
   REFERENCES commodities(id)
   ON DELETE SET NULL
@@ -213,6 +183,6 @@ CREATE TABLE cooking_slots(
   stoptime DATETIME COMMENT 'окончание готовки',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY cooking_slots_order_item_fk (order_item_id)
-  REFERENCES order_items(id)
+  REFERENCES order_range_items(id)
   ON DELETE SET NULL
 );
