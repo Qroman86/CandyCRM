@@ -19,7 +19,7 @@ UNION ALL
 SELECT onri.order_id, onri.id as oid, onri.quantity, c2.name as cname, c2.id as cid, 0 as weight, c2.is_ingredient FROM order_non_range_items onri		
 	LEFT JOIN commodities c2 on c2.id = onri.commodity_item_id;
 
---select * from commodities_for_order_view;
+-- select * from commodities_for_order_view;
 
 CREATE OR REPLACE VIEW larder_fact_weight_resiues 
 AS SELECT li.id as lid, c.id as cid, li.quantity, li.weight_residue, li.weight_per_item, c.name, 
@@ -34,7 +34,7 @@ FROM larder_items li
 	 INNER JOIN commodities c on li.commodity_id = c.id 		
 	 WHERE c.is_ingredient = FALSE and c.is_weight = FALSE;			
 	
-SELECT * FROM larder_fact_resiues		 
+SELECT * FROM larder_fact_weight_resiues;		 
 
 -- появились значения с 0.5 (некритично)
 /*

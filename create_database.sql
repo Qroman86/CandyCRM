@@ -22,9 +22,10 @@ DROP TABLE IF EXISTS orders;
 CREATE TABLE orders (
   id SERIAL PRIMARY KEY,
   customer_id BIGINT UNSIGNED NOT NULL,
-  deadline DATETIME NOT NULL,
+  deadline DATETIME NOT NULL COMMENT 'срок, к которому нужно выполнить заказ',
   total_cost decimal(10,2) COMMENT 'цена заказа',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  status ENUM('CREATE','INPROGRESS', 'DONE') DEFAULT 'CREATE',
   FOREIGN KEY customer_order_fk (customer_id) 
   REFERENCES customers(id)
   ON DELETE CASCADE
@@ -132,6 +133,7 @@ CREATE TABLE purchases(
   id SERIAL PRIMARY KEY,
   total_sum decimal(15,2) UNSIGNED NOT NULL COMMENT 'стоимость закупки',
   name VARCHAR(255),
+  status ENUM('CREATE', 'DONE') DEFAULT 'CREATE',
   purchase_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -164,7 +166,7 @@ CREATE TABLE larder_items(
   quantity INT UNSIGNED DEFAULT 1 COMMENT 'количество',
   weight_per_item decimal(9,3) UNSIGNED COMMENT 'вес в граммах в одной упаковке',  
   commodity_id BIGINT UNSIGNED COMMENT 'номер товара потребления',
-  weight_residue decimal(9,3) UNSIGNED COMMENT 'фактический остаток в граммах в данной упаковке',
+  weight_residue decimal(6,3) UNSIGNED COMMENT 'фактический весовой остаток в процентах для указанного количества упаковок',
   name VARCHAR(255),
   expiration_date DATETIME COMMENT 'срок годности',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,  
