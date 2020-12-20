@@ -1,6 +1,6 @@
 -- ToDo обернуть все в транзакцию
 -- вводим позиции ингридиентов и упаковки
-
+START TRANSACTION;
 INSERT INTO commodities
 (name, is_weight, is_ingredient)
 SELECT concat('Ингридиент №', a.N+10*b.N), TRUE, TRUE  
@@ -175,3 +175,5 @@ VALUES(null, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 
 -- select * from cooking_slots
+
+COMMIT;
