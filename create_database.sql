@@ -60,7 +60,7 @@ DROP TABLE IF EXISTS range_items;
 CREATE TABLE range_items (
   id SERIAL PRIMARY KEY,
   name VARCHAR(256),
-  price decimal(15,2) UNSIGNED COMMENT 'цена за единицу',
+  price decimal(9,2) UNSIGNED COMMENT 'цена за единицу',
   recipe_id BIGINT UNSIGNED NOT NULL COMMENT 'номер рецепта',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY range_item_recipe_fk (recipe_id)
@@ -146,7 +146,7 @@ CREATE TABLE purchase_items(
   commodity_id BIGINT UNSIGNED COMMENT 'позиция товара потребления',
   quantity INT UNSIGNED COMMENT 'количество',
   weigth_per_item decimal(9,3) UNSIGNED COMMENT 'вес в граммах в одной упаковке',
-  cost decimal(9,2) UNSIGNED NOT NULL COMMENT 'стоимость',
+  cost decimal(9,2) UNSIGNED NOT NULL COMMENT 'стоимость за упаковку',
   name VARCHAR(255),
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY purchase_item_purchase_fk (purchase_id)
@@ -183,6 +183,7 @@ CREATE TABLE cooking_slots(
   order_item_id BIGINT UNSIGNED COMMENT 'номер позиции заказа',
   starttime DATETIME COMMENT 'начало готовки',
   stoptime DATETIME COMMENT 'окончание готовки',
+  status ENUM('CREATE','INPROGRESS', 'DONE') DEFAULT 'CREATE',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY cooking_slots_order_item_fk (order_item_id)
   REFERENCES order_range_items(id)
