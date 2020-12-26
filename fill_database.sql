@@ -1,4 +1,3 @@
--- ToDo обернуть все в транзакцию
 -- вводим позиции ингридиентов и упаковки
 START TRANSACTION;
 INSERT INTO commodities

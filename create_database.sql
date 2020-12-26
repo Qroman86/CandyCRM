@@ -16,6 +16,7 @@ CREATE TABLE customers(
 	created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 ) COMMENT 'Заказчик';
 
+CREATE INDEX customers_fullname_indx ON customers(first_name, last_name, patronomyc_name);
 
 -- 1.Заказ
 DROP TABLE IF EXISTS orders;
@@ -31,6 +32,7 @@ CREATE TABLE orders (
   ON DELETE CASCADE
 ) COMMENT 'Заказы';
 
+CREATE INDEX orders_customer_indx ON orders(customer_id);
 
 -- 5.Отзыв по заказу
 DROP TABLE IF EXISTS order_reviews;
@@ -45,6 +47,8 @@ CREATE TABLE order_reviews (
   ON DELETE CASCADE
 ) COMMENT 'Отзывы по заказу';
 
+CREATE INDEX order_reviews_indx ON order_reviews(order_id);
+
 -- 8.Рецепты
 DROP TABLE IF EXISTS recipes;
 CREATE TABLE recipes(
@@ -54,6 +58,8 @@ CREATE TABLE recipes(
   cook_time_minutes INT NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 ) COMMENT 'Рецепты';
+
+CREATE INDEX recipes_indx ON recipes(name, cook_time_minutes);
 
 -- 7.Ассортимент (включает цену за шт.)
 DROP TABLE IF EXISTS range_items;
@@ -68,6 +74,7 @@ CREATE TABLE range_items (
   ON DELETE CASCADE
 ) COMMENT 'Позиции заказа';
 
+CREATE INDEX range_items_indx ON range_items(name, recipe_id);
 
 -- 9.2 Предмет потребления/товар
 DROP TABLE IF EXISTS commodities;
@@ -78,6 +85,8 @@ CREATE TABLE commodities(
   is_ingredient BOOL DEFAULT TRUE COMMENT 'является ли товар ингриедиентом для приготовления',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 ) COMMENT 'Товар потребления';
+
+CREATE INDEX commodities_indx ON commodities(name);
 
 -- 6.Позиция заказа (не может включать упаковку)
 DROP TABLE IF EXISTS order_range_items;
@@ -95,6 +104,9 @@ CREATE TABLE order_range_items (
   ON DELETE SET NULL  
 ) COMMENT 'Позиции заказа';
 
+CREATE INDEX order_range_items_indx ON order_range_items(order_id, range_item_id);
+
+
 DROP TABLE IF EXISTS order_non_range_items;
 CREATE TABLE order_non_range_items (
   id SERIAL PRIMARY KEY,
@@ -110,6 +122,7 @@ CREATE TABLE order_non_range_items (
   ON DELETE SET NULL  
 ) COMMENT 'Позиции заказа';
 
+CREATE INDEX order_non_range_items_indx ON order_non_range_items(order_id, commodity_item_id);
 
 -- 9.Позиция рецепта (количество продукта)
 DROP TABLE IF EXISTS recipe_items;
@@ -125,7 +138,7 @@ CREATE TABLE recipe_items(
   REFERENCES commodities(id)
 ) COMMENT 'Рецепты';
 
-
+CREATE INDEX recipe_items_indx ON recipe_items(recipe_id, ingredient_id);
 
 -- 10.Закупка
 DROP TABLE IF EXISTS purchases;
@@ -137,6 +150,8 @@ CREATE TABLE purchases(
   purchase_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX purchases_indx ON purchases(name, purchase_time);
 
 -- 11.Позиция закупки (может быть упаковкой)
 DROP TABLE IF EXISTS purchase_items;
@@ -158,6 +173,8 @@ CREATE TABLE purchase_items(
   
 );
 
+CREATE INDEX purchase_items_indx ON purchase_items(purchase_id, commodity_id);
+
 
 -- 13.Позиция кладовой (может быть упаковкой)
 DROP TABLE IF EXISTS larder_items;
@@ -175,6 +192,8 @@ CREATE TABLE larder_items(
   ON DELETE SET NULL
 );
 
+CREATE INDEX larder_items_indx ON larder_items(commodity_id, expiration_date);
+
 -- Слоты готовки позиций заказов
 DROP TABLE IF EXISTS cooking_slots;
 CREATE TABLE cooking_slots(
@@ -189,3 +208,5 @@ CREATE TABLE cooking_slots(
   REFERENCES order_range_items(id)
   ON DELETE SET NULL
 );
+
+CREATE INDEX cooking_slots_indx ON cooking_slots(order_item_id, starttime, stoptime);

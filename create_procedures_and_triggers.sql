@@ -1,12 +1,33 @@
--- проверим достаточно ли продуктов в кладовой для приготовления заказа
+
 use candycrm;
 
-
--- select * from larder_fact_weight_resiues;		
-
-
-DROP FUNCTION IF EXISTS check_is_ingredients_enough_for_order;
 DELIMITER //
+
+DROP PROCEDURE IF EXISTS generate_larderitems//
+CREATE PROCEDURE generate_larderitems (IN purchases_id BIGINT)
+BEGIN
+  
+	
+
+END//
+
+-- рассчитываем суммарную стоимость закупки в случае, когда переводим в статус "DONE"
+DROP TRIGGER IF EXISTS before_purchase_update//
+CREATE TRIGGER before_purchase_update BEFORE UPDATE ON purchases
+	FOR EACH ROW BEGIN
+	    DECLARE total_cost Decimal(9,3);
+	    SET total_cost = 0;
+		IF NEW.status = 'DONE' AND OLD.status != 'DONE' THEN
+			SELECT  SUM(cost) INTO total_cost FROM purchase_items where purchase_id = NEW.ID;
+			SET NEW.total_sum = total_cost;
+		END IF;
+END//
+	
+-- select * from purchases
+-- update purchases set status = 'DONE' where id = 1
+
+-- проверим достаточно ли продуктов в кладовой для приготовления заказа	
+DROP FUNCTION IF EXISTS check_is_ingredients_enough_for_order//
 CREATE FUNCTION check_is_ingredients_enough_for_order (order_id BIGINT)
 RETURNS BOOL READS SQL DATA
 BEGIN
@@ -88,7 +109,7 @@ BEGIN
   DECLARE cid_value BIGINT;	
   DECLARE current_purchase_id BIGINT;
   DECLARE result_value VARCHAR(128);
- DECLARE finished INTEGER DEFAULT 0;
+  DECLARE finished INTEGER DEFAULT 0;
   DECLARE cur_weight_data2 CURSOR FOR WITH  c AS (SELECT v.cid, SUM(v.weight) as sum_weight FROM commodities_for_order_view v		
 		where v.order_id = order_id_in
 		and v.is_ingredient = TRUE
@@ -133,13 +154,13 @@ BEGIN
 			INSERT INTO candycrm.purchase_items
 			(purchase_id, commodity_id, quantity, weigth_per_item, cost, name)			
 			VALUES(current_purchase_id, cid_value, CEILING(need_weight / 500), 500, 0, '');
-			SET result_value = CONCAT( 'Была добавлена по крайней мере одна позиция закупки!');
+			SET result_value = CONCAT( 'Была добавлена по крайней мере одна позиция закупки! Id закупки:', current_purchase_id);
 		END IF;
 		IF fact_weight < need_weight THEN
 			INSERT INTO candycrm.purchase_items
 			(purchase_id, commodity_id, quantity, weigth_per_item, cost, name)
 			VALUES(current_purchase_id, cid_value, CEILING((need_weight - fact_weight) / 500) , 500, 0, '');
-			SET result_value = CONCAT( 'Была добавлена по крайней мере одна позиция закупки!');
+			SET result_value = CONCAT( 'Была добавлена по крайней мере одна позиция закупки! Id закупки:', current_purchase_id);
 		END IF;
 	END LOOP cycle3;
 	
@@ -156,13 +177,13 @@ BEGIN
 			INSERT INTO candycrm.purchase_items
 			(purchase_id, commodity_id, quantity, weigth_per_item, cost, name)
 			VALUES(current_purchase_id, cid_value, need_quantity, 500, 0, '');
-			SET result_value = CONCAT( 'Была добавлена по крайней мере одна позиция закупки!');
+			SET result_value = CONCAT( 'Была добавлена по крайней мере одна позиция закупки! Id закупки:', current_purchase_id);
 		END IF;
 		IF fact_quantity < need_quantity THEN
 			INSERT INTO candycrm.purchase_items
 			(purchase_id, commodity_id, quantity, weigth_per_item, cost, name)
 			VALUES(current_purchase_id, cid_value, need_quantity - fact_quantity, 500, 0, '');
-			SET result_value = CONCAT( 'Была добавлена по крайней мере одна позиция закупки!');
+			SET result_value = CONCAT( 'Была добавлена по крайней мере одна позиция закупки! Id закупки:', current_purchase_id);
 		END IF;
 	END LOOP cycle4;
 	
@@ -175,13 +196,11 @@ END//
 
 
 
-
-
-
- CALL generate_purchase(1) //	
+ 	
 DELIMITER ;
 
+-- CALL generate_purchase(1);
 -- select * from orders o where id =1;
 -- update orders set status = 'INPROGRESS' WHERE id = 1;
 -- -select count(*), max(id) from purchases p -- 46
--- -select * from purchase_items pi2 where purchase_id = 35
+-- -select * from purchase_items pi2 where purchase_id = 18
