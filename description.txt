@@ -41,5 +41,11 @@ weight_residue - остаток хранения в процентах. Напр
 'CREATE' - это означает, что сформирован список что нужно купить и в каком количестве, но еще не определено где
 будет выполнена закупка и по каким ценам.
 
+Порядок запуска скриптов
+create_database.sql
+create_views.sql
+create_procedures_and_triggers.sql
+fill_database.sql
+selects.sql
 
  

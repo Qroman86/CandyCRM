@@ -200,7 +200,7 @@ CREATE TABLE cooking_slots(
   id SERIAL PRIMARY KEY,
   confectioner_id INT DEFAULT NULL,
   order_item_id BIGINT UNSIGNED COMMENT 'номер позиции заказа',
-  starttime DATETIME COMMENT 'начало готовки',
+  starttime DATETIME NOT NULL COMMENT 'начало готовки',
   stoptime DATETIME COMMENT 'окончание готовки',
   status ENUM('CREATE','INPROGRESS', 'DONE') DEFAULT 'CREATE',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

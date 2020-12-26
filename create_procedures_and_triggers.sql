@@ -3,12 +3,17 @@ use candycrm;
 
 DELIMITER //
 
-DROP PROCEDURE IF EXISTS generate_larderitems//
-CREATE PROCEDURE generate_larderitems (IN purchases_id BIGINT)
-BEGIN
-  
-	
-
+-- подставляем время окончания готовки в зависимости от времени, указанного в рецепте
+DROP TRIGGER IF EXISTS before_cooking_slot_insert//
+CREATE TRIGGER before_cooking_slot_insert BEFORE INSERT ON cooking_slots
+	FOR EACH ROW BEGIN
+	    DECLARE interval_minute INT;
+	    SET interval_minute = 0;
+		
+			-- SELECT  SUM(cost) INTO total_cost FROM purchase_items where purchase_id = NEW.ID;
+			SELECT c.time_per_one INTO interval_minute  FROM cooking_time_counter c WHERE c.order_item_id = NEW.order_item_id;
+			SET NEW.stoptime = DATE_ADD(NEW.starttime, INTERVAL interval_minute minute);
+		
 END//
 
 -- рассчитываем суммарную стоимость закупки в случае, когда переводим в статус "DONE"
@@ -25,6 +30,9 @@ END//
 	
 -- select * from purchases
 -- update purchases set status = 'DONE' where id = 1
+
+
+
 
 -- проверим достаточно ли продуктов в кладовой для приготовления заказа	
 DROP FUNCTION IF EXISTS check_is_ingredients_enough_for_order//
@@ -92,9 +100,56 @@ BEGIN
 	RETURN result_value;
 END//
 
-
-
--- SELECT check_is_ingredients_enough_for_order(2);
+-- получить список временных слотов "свободных" в ближайшую неделю
+DROP PROCEDURE IF EXISTS generate_cooking_slots//
+CREATE PROCEDURE generate_cooking_slots (IN order_id_in BIGINT)
+BEGIN
+	DECLARE csid BIGINT;
+	DECLARE stop INT;
+	DECLARE starttime DATETIME;
+	DECLARE stoptime DATETIME;
+	DECLARE free_starttime DATETIME;
+	DECLARE free_stoptime DATETIME;
+	DECLARE cur_exists_cs CURSOR FOR SELECT cs.id, cs.starttime, cs.stoptime FROM cooking_slots cs ORDER BY cs.starttime; 
+	DECLARE CONTINUE HANDLER 
+        FOR NOT FOUND SET stop = 1;
+       
+	DROP TEMPORARY TABLE IF EXISTS temp_lob;
+    CREATE TEMPORARY TABLE  temp_lob(
+         id SERIAL PRIMARY KEY,
+         starttime_v DATETIME,
+         stoptime_v DATETIME
+    );
+   	 	
+   
+    SET free_starttime = NOW();   
+    SET stop = 0;   
+    OPEN cur_exists_cs;
+	cycle1: LOOP
+		FETCH cur_exists_cs INTO csid, starttime, stoptime;
+		IF(stop = 1) THEN
+	 		LEAVE cycle1;
+	 	END IF;
+	 	
+	 	
+	 	SET free_stoptime = starttime;
+	 	IF free_stoptime > free_starttime THEN
+	 		INSERT INTO temp_lob(starttime_v, stoptime_v)
+	 		VALUES (free_starttime, free_stoptime);
+	 	END IF;
+	 	SET free_starttime = stoptime;
+		
+	 	
+	END LOOP cycle1;
+	CLOSE cur_exists_cs;
+	
+	INSERT INTO temp_lob(starttime_v, stoptime_v)
+	 		VALUES (free_starttime, DATE_ADD(free_starttime, INTERVAL 7 day));
+	
+	
+	SELECT * FROM temp_lob;
+END//
+-- CALL generate_cooking_slots(1);
 
 -- процедура генерации закупок
 

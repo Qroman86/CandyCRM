@@ -24,3 +24,9 @@ FROM larder_items li
 	 INNER JOIN commodities c on li.commodity_id = c.id 		
 	 WHERE c.is_ingredient = FALSE and c.is_weight = FALSE;			
 	
+-- представление, выдающее информацию о том сколько нужно потратить в минутах на приготовление одного заказа
+CREATE OR REPLACE VIEW cooking_time_counter
+AS SELECT ori.order_id, ori.id as order_item_id, ri.name ,ori.quantity, ori.quantity * r.cook_time_minutes as total_time_in_min, r.cook_time_minutes as time_per_one FROM order_range_items ori 
+		 LEFT JOIN range_items ri on ori.range_item_id = ri.id 
+		 LEFT JOIN recipes r on ri.recipe_id = r.id
+		 
