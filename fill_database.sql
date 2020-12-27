@@ -260,7 +260,6 @@ INSERT INTO candycrm.cooking_slots
 VALUES(null, 1, DATE_ADD(NOW(), INTERVAL FLOOR(1 + (RAND() * 4)) day));
 
 -- select * from candycrm.cooking_slots
--- truncate candycrm.cooking_slots
--- select * from cooking_slots
+
 
 COMMIT;

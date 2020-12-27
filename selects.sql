@@ -22,6 +22,12 @@ SELECT ori.id, ri.name , cs.starttime, cs.stoptime, cs.status FROM  order_range_
 		WHERE ori.order_id  = 2
 		ORDER BY ori.id
 
-
 		
+-- Суммарная стоимость и суммарный вес закупленных ингридиентов 
+SELECT SUM(pi2.cost) AS total_cost, SUM(pi2.weigth_per_item * pi2.quantity) as total_weight, c.name as ingridient_name, c.id as ingridient_id 
+					 FROM purchase_items pi2
+					 INNER JOIN commodities c ON pi2.commodity_id = c.id 	
+					 WHERE c.is_ingredient = TRUE AND c.is_weight = TRUE
+					 GROUP BY pi2.commodity_id 	
+
 		

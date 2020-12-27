@@ -100,56 +100,8 @@ BEGIN
 	RETURN result_value;
 END//
 
--- получить список временных слотов "свободных" в ближайшую неделю
-DROP PROCEDURE IF EXISTS generate_cooking_slots//
-CREATE PROCEDURE generate_cooking_slots (IN order_id_in BIGINT)
-BEGIN
-	DECLARE csid BIGINT;
-	DECLARE stop INT;
-	DECLARE starttime DATETIME;
-	DECLARE stoptime DATETIME;
-	DECLARE free_starttime DATETIME;
-	DECLARE free_stoptime DATETIME;
-	DECLARE cur_exists_cs CURSOR FOR SELECT cs.id, cs.starttime, cs.stoptime FROM cooking_slots cs ORDER BY cs.starttime; 
-	DECLARE CONTINUE HANDLER 
-        FOR NOT FOUND SET stop = 1;
-       
-	DROP TEMPORARY TABLE IF EXISTS temp_lob;
-    CREATE TEMPORARY TABLE  temp_lob(
-         id SERIAL PRIMARY KEY,
-         starttime_v DATETIME,
-         stoptime_v DATETIME
-    );
-   	 	
-   
-    SET free_starttime = NOW();   
-    SET stop = 0;   
-    OPEN cur_exists_cs;
-	cycle1: LOOP
-		FETCH cur_exists_cs INTO csid, starttime, stoptime;
-		IF(stop = 1) THEN
-	 		LEAVE cycle1;
-	 	END IF;
-	 	
-	 	
-	 	SET free_stoptime = starttime;
-	 	IF free_stoptime > free_starttime THEN
-	 		INSERT INTO temp_lob(starttime_v, stoptime_v)
-	 		VALUES (free_starttime, free_stoptime);
-	 	END IF;
-	 	SET free_starttime = stoptime;
-		
-	 	
-	END LOOP cycle1;
-	CLOSE cur_exists_cs;
-	
-	INSERT INTO temp_lob(starttime_v, stoptime_v)
-	 		VALUES (free_starttime, DATE_ADD(free_starttime, INTERVAL 7 day));
-	
-	
-	SELECT * FROM temp_lob;
-END//
--- CALL generate_cooking_slots(1);
+
+
 
 -- процедура генерации закупок
 
@@ -254,8 +206,3 @@ END//
  	
 DELIMITER ;
 
--- CALL generate_purchase(1);
--- select * from orders o where id =1;
--- update orders set status = 'INPROGRESS' WHERE id = 1;
--- -select count(*), max(id) from purchases p -- 46
--- -select * from purchase_items pi2 where purchase_id = 18
